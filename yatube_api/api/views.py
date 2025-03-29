@@ -1,5 +1,4 @@
 from rest_framework import viewsets, filters, mixins
-from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.pagination import LimitOffsetPagination
 from rest_framework.permissions import IsAuthenticatedOrReadOnly
 from django.shortcuts import get_object_or_404
@@ -13,7 +12,7 @@ from .permissions import IsAuthorOrReadOnly
 class FollowViewset(mixins.ListModelMixin,
                     mixins.CreateModelMixin,
                     viewsets.GenericViewSet):
-    filter_backends = (DjangoFilterBackend, filters.SearchFilter,)
+    filter_backends = (filters.SearchFilter,)
     search_fields = ('following__username',)
     serializer_class = FollowSerializer
 
