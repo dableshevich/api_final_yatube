@@ -1,4 +1,4 @@
-from rest_framework import serializers
+from rest_framework import serializers, validators
 from rest_framework.relations import SlugRelatedField
 
 import base64
@@ -20,7 +20,9 @@ class Base64ImageField(serializers.ImageField):
 
 
 class FollowSerializer(serializers.ModelSerializer):
-    user = SlugRelatedField(slug_field='username', read_only=True)
+    user = serializers.HiddenField(
+        default=serializers.CurrentUserDefault()
+    )
     following = SlugRelatedField(
         slug_field='username',
         queryset=User.objects.all()
@@ -29,14 +31,26 @@ class FollowSerializer(serializers.ModelSerializer):
     class Meta:
         fields = ('user', 'following')
         model = Follow
+        validators = [
+            validators.UniqueTogetherValidator(
+                queryset=Follow.objects.all(),
+                fields=('user', 'following')
+            )
+        ]
 
     def validate(self, data):
         request = self.context.get('request')
-        if request and request.user == data['following']:
-            raise serializers.ValidationError()
-        if request.user.follower.filter(following=data['following']):
+        if request.user == data.get('following'):
             raise serializers.ValidationError()
         return data
+
+    def to_representation(self, instance):
+        rep = super().to_representation(instance)
+        rep = {
+            'user': instance.user.username,
+            **rep
+        }
+        return rep
 
 
 class PostSerializer(serializers.ModelSerializer):
